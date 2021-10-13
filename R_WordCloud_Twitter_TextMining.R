@@ -1,0 +1,29 @@
+install.packages("twitterR")
+install.packages("ROAuth")
+install.packages("tm")
+api_key<-''
+api_secret<-''
+access_token<-''
+access_token_secret<-''
+library(twitteR)
+library(ROAuth)
+library(tm)
+setup_twitter_oauth(api_key,api_secret,access_token,access_token_secret)
+getTweets<-userTimeline("BarackObama",n=170)
+getTweets
+df<-do.call("rbind",lapply(getTweets, as.data.frame))
+myCorpus<-Corpus(VectorSource(gsub("[^[:graph:]]","",df$text)))
+myCorpus<-tm_map(myCorpus,tolower)
+myCorpus<-tm_map(myCorpus,removePunctuation)
+myCorpus<-tm_map(myCorpus,removeNumbers)
+myStopwords<-c(stopwords('english'),'avaiable',"via")
+myCorpus<-tm_map(myCorpus,removeWords,myStopwords)
+myTdm<-TermDocumentMatrix(myCorpus,control=list(wordLengths=c(1,Inf)))
+findFreqTerms(myTdm,lowfreq=10)
+install.packages("wordcloud")
+library(wordcloud)
+m<-as.matrix(myTdm)
+wordFreq<-sort(rowSums(m),decreasing = TRUE)
+set.seed(375)
+grayLevels<-gray((wordFreq+10)/(max(wordFreq)+10))
+wordcloud(word=names(wordFreq),freq=wordFreq,mind.freq=3,random.order=F,colors=grayLevels)
